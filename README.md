@@ -1,6 +1,6 @@
 DofuSteeringDisp
 =============
-This a an Assetto Corsa APP for streering inpout display.
+This a an Assetto Corsa APP for streering input display.
 
 I have been using the original APP for years, the main issue is that it's hard to distinguish the wheel turning direction/wheel position, especially when drifting. So it had to limits the steer angle at the display.
 
