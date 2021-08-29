@@ -671,15 +671,19 @@ def dkSteeringWheelSettingsDoWheelSettingsMaxSpeedMarkerDecrease(name, state):
 
 def dkSteeringWheelSettingsDoWheelSettingsMaxDegreesIncrease(name, state):
 	global app, dkSteeringWheelSettingsMaxDegrees, dkSteeringWheelSettingsWheelSettingsMaxDegreesLabelActual
-	if dkSteeringWheelSettingsMaxDegrees < 175:
-		dkSteeringWheelSettingsMaxDegrees += 5
+	if dkSteeringWheelSettingsMaxDegrees < 1080:
+		dkSteeringWheelSettingsMaxDegrees += 10
+		if dkSteeringWheelSettingsMaxDegrees > 1080:
+			dkSteeringWheelSettingsMaxDegrees = 1080
 		ac.setText(dkSteeringWheelSettingsWheelSettingsMaxDegreesLabelActual, "("+str(dkSteeringWheelSettingsMaxDegrees)+")")
 		dkCH.rc(app, app, 'maxdegrees', dkSteeringWheelSettingsMaxDegrees, 1)
 
 def dkSteeringWheelSettingsDoWheelSettingsMaxDegreesDecrease(name, state):
 	global app, dkSteeringWheelSettingsMaxDegrees, dkSteeringWheelSettingsWheelSettingsMaxDegreesLabelActual
-	if dkSteeringWheelSettingsMaxDegrees > 5:
-		dkSteeringWheelSettingsMaxDegrees -= 5
+	if dkSteeringWheelSettingsMaxDegrees > 10:
+		dkSteeringWheelSettingsMaxDegrees -= 10
+		if dkSteeringWheelSettingsMaxDegrees < 0:
+			dkSteeringWheelSettingsMaxDegrees = 0
 		ac.setText(dkSteeringWheelSettingsWheelSettingsMaxDegreesLabelActual, "("+str(dkSteeringWheelSettingsMaxDegrees)+")")
 		dkCH.rc(app, app, 'maxdegrees', dkSteeringWheelSettingsMaxDegrees, 1)
 
@@ -696,6 +700,22 @@ def dkSteeringWheelSettingsDoWheelSettingsSpokesWidthDecrease(name, state):
 		dkSteeringWheelSettingsSpokesWidth -= 10
 		ac.setText(dkSteeringWheelSettingsWheelSettingsSpokesWidthLabelActual, "("+str(dkSteeringWheelSettingsSpokesWidth)+")")
 		dkCH.rc(app, app, 'spokeswidth', dkSteeringWheelSettingsSpokesWidth, 1)
+
+def setDegreeColor(degreeColorLevel):
+	degreeColorLevelAdj=0
+	if dkSteeringWheelSettingsInvertWheelColor:
+		# light
+		if degreeColorLevel!=0:
+			degreeColorLevelAdj=0.3+degreeColorLevel*0.7
+		ac.glColor4f(1.0, 1.0*(1-degreeColorLevelAdj), 1.0*(1-degreeColorLevelAdj), 0.3+0.3*(degreeColorLevel))
+		#rgba = [1.0, 1.0*(1-degreeColorLevelAdj), 1.0*(1-degreeColorLevelAdj), 0.3+0.3*(degreeColorLevel)]
+	else:
+		# dark
+		if degreeColorLevel!=0:
+			degreeColorLevelAdj=0.1+degreeColorLevel*0.9
+		ac.glColor4f(0.1+0.9*degreeColorLevelAdj, 0.1*(1-degreeColorLevelAdj), 0.1*(1-degreeColorLevelAdj), 0.7)
+		#rgba = [0.1+0.9*degreeColorLevelAdj, 0.1*(1-degreeColorLevelAdj), 0.1*(1-degreeColorLevelAdj), 0.7]
+	#return rgba
 
 def onFormRender(deltaT):
 	global appWindow, dkSteeringWheelConfigButtonTimer, dkSteeringWheelConfigButton, configWindowVisible
@@ -744,7 +764,7 @@ def onFormRender(deltaT):
 		if degrees > degreesMax:
 			degrees = degreesMax
 
-	degrees = degrees - 90
+	degreesDisp = degrees - 90
 
 	if dkSteeringWheelSettingsBlink:
 		redPaint = False
@@ -760,8 +780,10 @@ def onFormRender(deltaT):
 		drawWheel = True
 		
 	if drawWheel:
+		# ac.console("De:"+str(degrees))
 		# Paint wheel
-		for i in range(0, 360, 10):
+		degreeColorAngleDiff = 0
+		for i in range(0, 360, 10): #360 is not included
 
 			# Paint steering wheel outline
 			if dkSteeringWheelSettingsOutline:
@@ -781,20 +803,116 @@ def onFormRender(deltaT):
 				ac.glEnd()
 
 			# Paint steering wheel
+			degreeColorLevel=0
+			degreeColorLevelAdj=0
+			degreeColorLevelLast=0
+			degreeColorAngleDiffNext=0
 			ac.glBegin(3)
 			if showRed and redPaint:
 				ac.glColor4f(1.0, 0.0, 0.0, 0.3)
 			elif showRed and blinkOn:
 				ac.glColor4f(1.0, 0.0, 0.0, 0.3)
 			else:
-				if dkSteeringWheelSettingsInvertWheelColor:
-					ac.glColor4f(1.0, 1.0, 1.0, 0.3)
-				else:
-					ac.glColor4f(0.1, 0.1, 0.1, 0.7)
-			ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+10))*wheel_out_radius,wheel_center_y + math.sin(math.radians(i+10))*wheel_out_radius)
-			ac.glVertex2f(wheel_center_x + math.cos(math.radians(i))*wheel_out_radius,wheel_center_y + math.sin(math.radians(i))*wheel_out_radius)
-			ac.glVertex2f(wheel_center_x + math.cos(math.radians(i))*wheel_in_radius,wheel_center_y + math.sin(math.radians(i))*wheel_in_radius)
-			ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+10))*wheel_in_radius,wheel_center_y + math.sin(math.radians(i+10))*wheel_in_radius)
+				# Turn Right
+				if degrees >= marker_width/5:
+					if degrees > i:
+						degreeColorLevel = (i+10)/(degreesMax/2)
+						# check the last color block
+						if i+10 > degrees: 
+							degreeColorAngleDiffNext = degrees-i
+						# over 360
+						if degrees >= 360 and i <= degrees-360:
+							degreeColorLevel = (i+10+360)/(degreesMax/2)
+							if i+10 > degrees-360:
+								degreeColorAngleDiffNext = (degrees-360)-i
+						# deal with first block when steer at last postion
+						if i==0 and degrees > 350 and degrees <360:
+							degreeColorAngleDiff = degrees-350
+							#ac.console("DD:"+str(degrees)+" i:"+str(i)+" DF:"+str(degreeColorAngleDiff)+str(i)+" LV:"+str(degreeColorLevel))
+				# Turn Left
+				elif -degrees >= marker_width/5: 
+					if -degrees > (340-i):
+						degreeColorLevel = (360-i)/(degreesMax/2)
+						# check the 2nd last color block (the last always fill)
+						if (350-i) > -degrees: 
+							# ac.console("Skip:"+str(i)+" DD:"+str(degrees))
+							degreeColorAngleDiff = degrees+(340-i)
+						# over 360
+						if -degrees >= 360 and (-degrees-360) > (340-i):
+							degreeColorLevel = (360+360-i)/(degreesMax/2)
+							if  (-degrees-360) < (350-i):
+								# ac.console("Skip:"+str(i)+" DD:"+str(degrees))
+								degreeColorAngleDiff = degrees+360+(340-i)
+						if i==350 and -degrees > 350 and -degrees <360:
+							degreeColorAngleDiff = degrees+350
+							#ac.console("DD:"+str(degrees)+" i:"+str(i)+" DF:"+str(degreeColorAngleDiff)+str(i)+" LV:"+str(degreeColorLevel))
+
+				# draw a full block
+				if degreeColorAngleDiff == 0: #draw color blocks flow wheel mark
+					setDegreeColor(degreeColorLevel)
+					i9 = i-90
+					ac.glVertex2f(wheel_center_x + math.cos(math.radians(i9+10))*wheel_out_radius,wheel_center_y + math.sin(math.radians(i9+10))*wheel_out_radius)
+					ac.glVertex2f(wheel_center_x + math.cos(math.radians(i9))*wheel_out_radius,wheel_center_y + math.sin(math.radians(i9))*wheel_out_radius)
+					ac.glVertex2f(wheel_center_x + math.cos(math.radians(i9))*wheel_in_radius,wheel_center_y + math.sin(math.radians(i9))*wheel_in_radius)
+					ac.glVertex2f(wheel_center_x + math.cos(math.radians(i9+10))*wheel_in_radius,wheel_center_y + math.sin(math.radians(i9+10))*wheel_in_radius)
+					#ac.console("DD:"+str(degrees)+" i:"+str(i)+" LV:"+str(degreeColorLevel))
+				else: # draw 2 color blocks to quickly flow wheel mark
+					neg = degreeColorAngleDiff/abs(degreeColorAngleDiff)
+					if degrees>=0: #turn right
+						degreeColorLevelFar = degreeColorLevel
+						degreeColorLevelNear = (i+10)/(degreesMax/2)
+						if degrees >= 350:
+							degreeColorLevelNear = (i+10+360)/(degreesMax/2)
+					else: #turn left
+						degreeColorLevelFar = 0
+						degreeColorLevelNear = degreeColorLevel
+						if -degrees >= 350:
+							degreeColorLevelFar = (360-i)/(degreesMax/2)
+							if i==350:
+								degreeColorLevelNear= (360+360-i)/(degreesMax/2)
+					# ac.console("DD:"+str(degrees)+" i:"+str(i)+" Near:"+str(degreeColorLevelNear)+" Far:"+str(degreeColorLevelFar))
+					# far color block (<360:steer color, >360:first loop color)
+					setDegreeColor(degreeColorLevelFar)
+					degreesStart = degreesDisp+marker_width*neg
+					degreesEnd = degreesStart+(10*neg-degreeColorAngleDiff)
+					#ac.console("DD:"+str(degreesDisp)+" DF:"+str(degreeColorAngleDiff)+" DS:"+str(degreesStart)+" DE:"+str(degreesEnd))
+					if degreesStart < degreesEnd:
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesEnd))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degreesEnd))*wheel_out_radius)
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesStart))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degreesStart))*wheel_out_radius)
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesStart))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degreesStart))*wheel_in_radius)
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesEnd))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degreesEnd))*wheel_in_radius)
+					else:
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesStart))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degreesStart))*wheel_out_radius)
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesEnd))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degreesEnd))*wheel_out_radius)
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesEnd))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degreesEnd))*wheel_in_radius)
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesStart))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degreesStart))*wheel_in_radius)
+
+					# Near color block (highlight red)
+					setDegreeColor(degreeColorLevelNear)
+					# ac.console("Near:"+str(degreeColorLevel))
+					#ac.glColor4f(1,1,0,0.5)
+					degreesStart = degreesDisp+marker_width*neg
+					degreesEnd = degreesStart-degreeColorAngleDiff
+					#ac.console("DD:"+str(degreesDisp)+" DF:"+str(degreeColorAngleDiff)+" DS:"+str(degreesStart)+" DE:"+str(degreesEnd))
+					if degreesStart < degreesEnd:
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesEnd))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degreesEnd))*wheel_out_radius)
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesStart))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degreesStart))*wheel_out_radius)
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesStart))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degreesStart))*wheel_in_radius)
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesEnd))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degreesEnd))*wheel_in_radius)
+					else:
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesStart))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degreesStart))*wheel_out_radius)
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesEnd))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degreesEnd))*wheel_out_radius)
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesEnd))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degreesEnd))*wheel_in_radius)
+						ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesStart))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degreesStart))*wheel_in_radius)
+
+					degreeColorAngleDiff=0
+
+
+				if degreeColorAngleDiffNext != 0:
+					degreeColorAngleDiff=degreeColorAngleDiffNext
+					degreeColorLevelLast=degreeColorLevel
+
+
 			ac.glEnd()
 
 		# Paint steering wheel spokes and center
@@ -808,10 +926,10 @@ def onFormRender(deltaT):
 					ac.glColor4f(0.0, 0.0, 0.0, 0.2)
 				wAdd = 1.35 # Add outline width
 				for i in [80, 180, 280]:
-					ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degrees+(dkSteeringWheelSettingsSpokesWidth*wAdd)/12))*wheel_in_radius, wheel_center_y + math.sin(math.radians(i+degrees+(dkSteeringWheelSettingsSpokesWidth*wAdd)/12))*wheel_in_radius)
-					ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degrees-(dkSteeringWheelSettingsSpokesWidth*wAdd)/12))*wheel_in_radius, wheel_center_y + math.sin(math.radians(i+degrees-(dkSteeringWheelSettingsSpokesWidth*wAdd)/12))*wheel_in_radius)
-					ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degrees-(dkSteeringWheelSettingsSpokesWidth*wAdd)))*center_radius, wheel_center_y + math.sin(math.radians(i+degrees-(dkSteeringWheelSettingsSpokesWidth*wAdd)))*center_radius)
-					ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degrees+(dkSteeringWheelSettingsSpokesWidth*wAdd)))*center_radius, wheel_center_y + math.sin(math.radians(i+degrees+(dkSteeringWheelSettingsSpokesWidth*wAdd)))*center_radius)
+					ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degreesDisp+(dkSteeringWheelSettingsSpokesWidth*wAdd)/12))*wheel_in_radius, wheel_center_y + math.sin(math.radians(i+degreesDisp+(dkSteeringWheelSettingsSpokesWidth*wAdd)/12))*wheel_in_radius)
+					ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degreesDisp-(dkSteeringWheelSettingsSpokesWidth*wAdd)/12))*wheel_in_radius, wheel_center_y + math.sin(math.radians(i+degreesDisp-(dkSteeringWheelSettingsSpokesWidth*wAdd)/12))*wheel_in_radius)
+					ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degreesDisp-(dkSteeringWheelSettingsSpokesWidth*wAdd)))*center_radius, wheel_center_y + math.sin(math.radians(i+degreesDisp-(dkSteeringWheelSettingsSpokesWidth*wAdd)))*center_radius)
+					ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degreesDisp+(dkSteeringWheelSettingsSpokesWidth*wAdd)))*center_radius, wheel_center_y + math.sin(math.radians(i+degreesDisp+(dkSteeringWheelSettingsSpokesWidth*wAdd)))*center_radius)
 				ac.glEnd()
 
 			# Paint steering wheel spokes
@@ -821,10 +939,10 @@ def onFormRender(deltaT):
 			else:
 				ac.glColor4f(0.5, 0.5, 0.5, 0.8)
 			for i in [80, 180, 280]:
-				ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degrees+dkSteeringWheelSettingsSpokesWidth/12))*wheel_in_radius, wheel_center_y + math.sin(math.radians(i+degrees+dkSteeringWheelSettingsSpokesWidth/12))*wheel_in_radius)
-				ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degrees-dkSteeringWheelSettingsSpokesWidth/12))*wheel_in_radius, wheel_center_y + math.sin(math.radians(i+degrees-dkSteeringWheelSettingsSpokesWidth/12))*wheel_in_radius)
-				ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degrees-dkSteeringWheelSettingsSpokesWidth))*center_radius, wheel_center_y + math.sin(math.radians(i+degrees-dkSteeringWheelSettingsSpokesWidth))*center_radius)
-				ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degrees+dkSteeringWheelSettingsSpokesWidth))*center_radius, wheel_center_y + math.sin(math.radians(i+degrees+dkSteeringWheelSettingsSpokesWidth))*center_radius)
+				ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degreesDisp+dkSteeringWheelSettingsSpokesWidth/12))*wheel_in_radius, wheel_center_y + math.sin(math.radians(i+degreesDisp+dkSteeringWheelSettingsSpokesWidth/12))*wheel_in_radius)
+				ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degreesDisp-dkSteeringWheelSettingsSpokesWidth/12))*wheel_in_radius, wheel_center_y + math.sin(math.radians(i+degreesDisp-dkSteeringWheelSettingsSpokesWidth/12))*wheel_in_radius)
+				ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degreesDisp-dkSteeringWheelSettingsSpokesWidth))*center_radius, wheel_center_y + math.sin(math.radians(i+degreesDisp-dkSteeringWheelSettingsSpokesWidth))*center_radius)
+				ac.glVertex2f(wheel_center_x + math.cos(math.radians(i+degreesDisp+dkSteeringWheelSettingsSpokesWidth))*center_radius, wheel_center_y + math.sin(math.radians(i+degreesDisp+dkSteeringWheelSettingsSpokesWidth))*center_radius)
 			ac.glEnd()
 			# Paint steering wheel center
 			for i in range(0, 360, 10):
@@ -853,10 +971,10 @@ def onFormRender(deltaT):
 					ac.glColor4f(0.1, 0.1, 0.1, 0.3)
 				else:
 					ac.glColor4f(1.0, 1.0, 1.0, 0.3)
-			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degrees+marker_width))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degrees+marker_width))*wheel_out_radius)
-			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degrees))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degrees))*wheel_out_radius)
-			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degrees))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degrees))*wheel_in_radius)
-			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degrees+marker_width))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degrees+marker_width))*wheel_in_radius)
+			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesDisp+marker_width))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degreesDisp+marker_width))*wheel_out_radius)
+			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesDisp))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degreesDisp))*wheel_out_radius)
+			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesDisp))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degreesDisp))*wheel_in_radius)
+			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesDisp+marker_width))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degreesDisp+marker_width))*wheel_in_radius)
 			ac.glEnd()
 
 			########### Left part
@@ -870,8 +988,8 @@ def onFormRender(deltaT):
 					ac.glColor4f(0.1, 0.1, 0.1, 0.3)
 				else:
 					ac.glColor4f(1.0, 1.0, 1.0, 0.3)
-			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degrees))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degrees))*wheel_out_radius)
-			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degrees-marker_width))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degrees-marker_width))*wheel_out_radius)
-			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degrees-marker_width))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degrees-marker_width))*wheel_in_radius)
-			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degrees))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degrees))*wheel_in_radius)
+			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesDisp))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degreesDisp))*wheel_out_radius)
+			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesDisp-marker_width))*wheel_out_radius, wheel_center_y + math.sin(math.radians(degreesDisp-marker_width))*wheel_out_radius)
+			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesDisp-marker_width))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degreesDisp-marker_width))*wheel_in_radius)
+			ac.glVertex2f(wheel_center_x + math.cos(math.radians(degreesDisp))*wheel_in_radius, wheel_center_y + math.sin(math.radians(degreesDisp))*wheel_in_radius)
 			ac.glEnd()
