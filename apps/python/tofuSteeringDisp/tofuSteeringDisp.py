@@ -57,7 +57,7 @@ dkSteeringWheelSettingsPaintRed					= strToBool(dkCH.rc(app, app, 'paintred', 'F
 dkSteeringWheelSettingsLimitWheelAngle			= strToBool(dkCH.rc(app, app, 'limitwheelangle', 'True'))		# ingame conf
 dkSteeringWheelSettingsOutline					= strToBool(dkCH.rc(app, app, 'outline', 'True'))				# ingame conf
 dkSteeringWheelSettingsAppWidth					= int(dkCH.rc(app, app, 'appsize', '120'))						# ingame conf
-dkSteeringWheelSettingsMaxDegrees				= int(dkCH.rc(app, app, 'maxdegrees', '135'))					# ingame conf
+dkSteeringWheelSettingsMaxDegrees				= int(dkCH.rc(app, app, 'maxdegrees', '900'))					# ingame conf
 dkSteeringWheelSettingsMarker					= strToBool(dkCH.rc(app, app, 'marker', 'True'))				# ingame conf
 dkSteeringWheelSettingsMarkerTopSpeed			= int(dkCH.rc(app, app, 'markertopspeed', '1000'))				# ingame conf
 dkSteeringWheelSettingsSpokes					= strToBool(dkCH.rc(app, app, 'spokes', 'True'))				# ingame conf
@@ -687,8 +687,8 @@ def dkSteeringWheelSettingsDoWheelSettingsMaxDegreesDecrease(name, state):
 	global app, dkSteeringWheelSettingsMaxDegrees, dkSteeringWheelSettingsWheelSettingsMaxDegreesLabelActual
 	if dkSteeringWheelSettingsMaxDegrees > 10:
 		dkSteeringWheelSettingsMaxDegrees -= 10
-		if dkSteeringWheelSettingsMaxDegrees < 0:
-			dkSteeringWheelSettingsMaxDegrees = 0
+		if dkSteeringWheelSettingsMaxDegrees < 10:
+			dkSteeringWheelSettingsMaxDegrees = 10
 		ac.setText(dkSteeringWheelSettingsWheelSettingsMaxDegreesLabelActual, "("+str(dkSteeringWheelSettingsMaxDegrees)+")")
 		dkCH.rc(app, app, 'maxdegrees', dkSteeringWheelSettingsMaxDegrees, 1)
 
