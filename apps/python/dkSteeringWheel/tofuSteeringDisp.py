@@ -12,7 +12,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ######################################################################################
-# dkSteeringWheel.py
+# tofuSteeringDisp.py
+# Tofu Express
+# https://www.youtube.com/channel/UCgLYCKjBtZmO41tdpL1VPZw
+# 2021-08-29	v0.51	first version based on dkSteeringWheel v0.5
+#
+# Original: dkSteeringWheel.py
 # Dennis Karlsson (dennis@dennis.se)
 # This is my take on the Steering Wheel app.
 # Original: https://www.racedepartment.com/downloads/steering-input-display.11713/
@@ -30,7 +35,7 @@
 ######################################################################################
 
 import ac, acsys, math, time, dkCH
-app = "dkSteeringWheel"
+app = "tofuSteeringDisp"
 ac.log("["+app+"] Starting...")
 
 def strToBool(s):
