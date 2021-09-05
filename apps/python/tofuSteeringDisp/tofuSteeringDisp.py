@@ -710,17 +710,17 @@ def setDegreeColor(degreeColorLevel):
 	degreeColorLevelAdj=0
 	if dkSteeringWheelSettingsInvertWheelColor:
 		# light
-		if degreeColorLevel!=0:
-			degreeColorLevelAdj=0.3+degreeColorLevel*0.7
-		ac.glColor4f(1.0, 1.0*(1-degreeColorLevelAdj), 1.0*(1-degreeColorLevelAdj), 0.3+0.3*(degreeColorLevel))
-		#rgba = [1.0, 1.0*(1-degreeColorLevelAdj), 1.0*(1-degreeColorLevelAdj), 0.3+0.3*(degreeColorLevel)]
+		if degreeColorLevel==0:
+			ac.glColor4f(1.0, 1.0, 1.0, 0.3)
+		else:
+			degreeColorLevelAdj=0.5+degreeColorLevel*0.5
+			ac.glColor4f(0.5+0.5*degreeColorLevel, 1*(1-degreeColorLevel*1.5), 0, 0.3+0.3*(degreeColorLevel))
 	else:
 		# dark
-		if degreeColorLevel!=0:
-			degreeColorLevelAdj=0.1+degreeColorLevel*0.9
-		ac.glColor4f(0.1+0.9*degreeColorLevelAdj, 0.1*(1-degreeColorLevelAdj), 0.1*(1-degreeColorLevelAdj), 0.7)
-		#rgba = [0.1+0.9*degreeColorLevelAdj, 0.1*(1-degreeColorLevelAdj), 0.1*(1-degreeColorLevelAdj), 0.7]
-	#return rgba
+		if degreeColorLevel==0:
+			ac.glColor4f(0.1, 0.1, 0.1, 0.7)
+		else:
+			ac.glColor4f(0.5+0.5*degreeColorLevel, 1*(1-degreeColorLevel*1.5), 0, 0.7)
 
 def onFormRender(deltaT):
 	global appWindow, dkSteeringWheelConfigButtonTimer, dkSteeringWheelConfigButton, configWindowVisible
